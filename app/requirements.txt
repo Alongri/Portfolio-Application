@@ -1,0 +1,8 @@
+Flask
+pymongo
+pandas
+python-dotenv
+openpyxl
+pytest
+pytest-mock
+
