@@ -119,18 +119,6 @@ Install locally (optional):
 pip install -r app/requirements.txt
 ```
 
----
-
-## 🌟 Future Improvements
-
-* Add **user authentication**
-* Support **Excel file validation and error messages**
-* Add **success/error notifications** on the frontend
-* Enable **filtering and querying** of uploaded data
-* Deploy to **cloud platform** (AWS, GCP, or Azure)
-
----
-
 ## 🔗 Links
 
 * Flask: [https://flask.palletsprojects.com](https://flask.palletsprojects.com)
