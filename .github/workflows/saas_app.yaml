@@ -31,7 +31,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest app/tests/ --maxfail=1 --disable-warnings -q
+          PYTHONPATH=. pytest app/tests/ --maxfail=1 --disable-warnings -q
 
   build-and-e2e:
     name: 🏗️ Build Docker & Run E2E
