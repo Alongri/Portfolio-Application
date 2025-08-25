@@ -1,6 +1,6 @@
 import io
 import pytest
-from app.main import app
+from app.main import app, get_db
 
 @pytest.fixture
 def client():
@@ -25,14 +25,17 @@ def test_post_upload(client, monkeypatch):
     df.to_excel(excel_buffer, index=False)
     excel_buffer.seek(0)
 
-    # Mock MongoDB insert to avoid real DB connection
+    # Create a dummy DB that mimics pymongo behavior
     class DummyCollection:
         def insert_many(self, data):
             self.inserted = data
             return True
 
-    dummy_db = DummyCollection()
-    monkeypatch.setattr("app.main.db.excel_data", dummy_db)
+    class DummyDB:
+        excel_data = DummyCollection()
+
+    # Patch get_db() to return our dummy DB
+    monkeypatch.setattr("app.main", "get_db", lambda: DummyDB())
 
     data = {
         "file": (excel_buffer, "test.xlsx")
@@ -41,5 +44,7 @@ def test_post_upload(client, monkeypatch):
     response = client.post("/upload/", data=data, content_type="multipart/form-data")
     assert response.status_code == 200
     assert b"uploaded successfully" in response.data
-    # Optional: check data was "inserted" in dummy collection
-    assert len(dummy_db.inserted) == 2
+
+    # Check data was "inserted" into dummy collection
+    dummy_db_instance = get_db()  # returns DummyDB() due to monkeypatch
+    assert len(dummy_db_instance.excel_data.inserted) == 2
