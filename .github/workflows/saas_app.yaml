@@ -1,0 +1,139 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ap-south-1
+  IMAGE_NAME: flask-app
+
+jobs:
+  test-native:
+    name: 🧪 Build & Unit Test (No Docker)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          pip install -r app/requirements.txt
+          pip install pytest openpyxl
+
+      - name: Run unit tests
+        run: |
+          pytest app/tests/ --maxfail=1 --disable-warnings -q
+
+  build-and-e2e:
+    name: 🏗️ Build Docker & Run E2E
+    needs: test-native
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.set-version.outputs.version }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next version (do not push)
+        id: set-version
+        run: |
+          LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+          if [[ -z "$LATEST_TAG" ]]; then
+            NEW_VERSION="v1.0.0"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$(echo $LATEST_TAG | sed 's/^v//')"
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:$VERSION -f app/Dockerfile
+
+      - name: Save Docker image as artifact
+        run: |
+          docker save $IMAGE_NAME:$VERSION | gzip > flask-app.tar.gz
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flask-docker-image
+          path: flask-app.tar.gz
+
+      - name: Run E2E via Docker Compose
+        run: |
+          docker compose up -d
+          for i in {1..10}; do
+            if curl -sf http://localhost:5000/; then break; fi
+            echo "Waiting for container..."; sleep 1
+          done
+
+      - name: E2E tests
+        run: |
+          curl -f http://localhost:5000/
+
+      - name: Teardown containers
+        if: always()
+        run: docker compose down
+
+      - name: Push tag to repo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+  push-to-ecr:
+    name: 📦 Push Docker to AWS ECR
+    needs: build-and-e2e
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flask-docker-image
+
+      - name: Load Docker image
+        run: |
+          gunzip -c flask-app.tar.gz | docker load
+
+      - name: Use version from build job
+        run: echo "VERSION=${{ needs.build-and-e2e.outputs.version }}" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION \
+            | docker login --username AWS --password-stdin 884394270539.dkr.ecr.ap-south-1.amazonaws.com
+
+      - name: Tag and push Docker image
+        run: |
+          docker tag $IMAGE_NAME:$VERSION 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/excel_uploader:$VERSION
+          docker push 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/excel_uploader:$VERSION
+
+
