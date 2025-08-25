@@ -73,7 +73,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $IMAGE_NAME:$VERSION -f app/Dockerfile .
+          docker build -t $IMAGE_NAME:$VERSION -f app/Dockerfile app/
 
       - name: Save Docker image as artifact
         run: |
