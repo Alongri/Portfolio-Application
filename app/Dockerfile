@@ -17,9 +17,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy only the application code needed
-COPY main.py ./ 
-COPY templates ./templates
-COPY static ./static
+COPY app/main.py ./ 
+COPY app/templates ./templates
+COPY app/static ./static
 
 # Expose the port the app runs on
 EXPOSE 5000
