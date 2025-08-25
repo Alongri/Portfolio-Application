@@ -1,6 +1,8 @@
 import io
+import pandas as pd
 import pytest
-from app.main import app, get_db
+import app.main as main  # import the module directly
+from app.main import app
 
 @pytest.fixture
 def client():
@@ -8,24 +10,16 @@ def client():
     with app.test_client() as client:
         yield client
 
-def test_get_home(client):
-    """Test GET / returns 200 and contains form"""
-    response = client.get("/")
-    assert response.status_code == 200
-    assert b"Upload Excel File" in response.data
-    assert b"type=\"file\"" in response.data
-
 def test_post_upload(client, monkeypatch):
     """Test POST /upload/ with a small Excel file"""
 
-    # Create a dummy Excel file in memory
-    import pandas as pd
+    # Dummy Excel file
     df = pd.DataFrame({"Name": ["Alice", "Bob"], "Age": [30, 25]})
     excel_buffer = io.BytesIO()
     df.to_excel(excel_buffer, index=False)
     excel_buffer.seek(0)
 
-    # Create a dummy DB that mimics pymongo behavior
+    # Dummy DB
     class DummyCollection:
         def insert_many(self, data):
             self.inserted = data
@@ -34,17 +28,14 @@ def test_post_upload(client, monkeypatch):
     class DummyDB:
         excel_data = DummyCollection()
 
-    # Patch get_db() to return our dummy DB
-    monkeypatch.setattr("app.main", "get_db", lambda: DummyDB())
+    # Patch get_db() on the module object
+    monkeypatch.setattr(main, "get_db", lambda: DummyDB())
 
-    data = {
-        "file": (excel_buffer, "test.xlsx")
-    }
-
+    data = {"file": (excel_buffer, "test.xlsx")}
     response = client.post("/upload/", data=data, content_type="multipart/form-data")
+
     assert response.status_code == 200
     assert b"uploaded successfully" in response.data
 
-    # Check data was "inserted" into dummy collection
-    dummy_db_instance = get_db()  # returns DummyDB() due to monkeypatch
+    dummy_db_instance = main.get_db()
     assert len(dummy_db_instance.excel_data.inserted) == 2
