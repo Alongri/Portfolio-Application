@@ -101,12 +101,6 @@ jobs:
         if: always()
         run: docker compose down
 
-      - name: Push tag to repo
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag "$VERSION"
-          git push origin "$VERSION"
 
   push-to-ecr:
     name: 📦 Push Docker to AWS ECR
