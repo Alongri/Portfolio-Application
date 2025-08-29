@@ -37,7 +37,6 @@ jobs:
     name: 🏗️ Build Docker & Run E2E
     needs: test-native
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
 
@@ -70,7 +69,6 @@ jobs:
           echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-
       - name: Build Docker image
         run: |
           docker build -t $IMAGE_NAME:$VERSION -f app/Dockerfile app/
@@ -101,12 +99,10 @@ jobs:
         if: always()
         run: docker compose down
 
-
   push-to-ecr:
     name: 📦 Push Docker to AWS ECR
     needs: build-and-e2e
     runs-on: ubuntu-latest
-
 
     steps:
       - name: Checkout source code
@@ -121,7 +117,7 @@ jobs:
         run: |
           gunzip -c flask-app.tar.gz | docker load
 
-      - name: Use version from build job
+      - name: Set VERSION environment variable
         run: echo "VERSION=${{ needs.build-and-e2e.outputs.version }}" >> $GITHUB_ENV
 
       - name: Configure AWS credentials
@@ -141,35 +137,30 @@ jobs:
           docker tag $IMAGE_NAME:$VERSION 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/excel_uploader:$VERSION
           docker push 884394270539.dkr.ecr.ap-south-1.amazonaws.com/development/excel_uploader:$VERSION
 
+  deploy-to-eks:
+    name: 🚀 Deploy to EKS
+    needs: push-to-ecr
+    runs-on: ubuntu-latest
 
-    deploy-to-eks:
-      name: 🚀 Deploy to EKS
-      needs: push-to-ecr
-      runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      steps:
-        - name: Checkout repo
-          uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@v3
-          with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: ${{ env.AWS_REGION }}
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --region $AWS_REGION --name alon-cluster
 
-        - name: Update kubeconfig for EKS
-          run: |
-            aws eks update-kubeconfig --region $AWS_REGION --name alon-cluster
+      - name: Set VERSION environment variable
+        run: echo "VERSION=${{ needs.build-and-e2e.outputs.version }}" >> $GITHUB_ENV
 
-        - name: Set VERSION environment variable
-          run: echo "VERSION=${{ needs.build-and-e2e.outputs.version }}" >> $GITHUB_ENV
-
-        - name: Deploy application
-          run: |
-            kubectl set image deployment/flask-app flask=$IMAGE_NAME:$VERSION -n default
-            kubectl rollout status deployment/flask-app -n default
-
-
-
-
+      - name: Deploy application
+        run: |
+          kubectl set image deployment/flask-app flask=$IMAGE_NAME:$VERSION -n default
+          kubectl rollout status deployment/flask-app -n default
