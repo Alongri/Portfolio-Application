@@ -58,6 +58,10 @@ def get_data():
     data = list(get_db().excel_data.find({}, {"_id": 0}))
     return jsonify({"data": data})
 
+@app.route("/health")
+def health():
+    return "ok", 200
+
 # Serve static files (CSS, JS)
 app.static_folder = 'static'
 
