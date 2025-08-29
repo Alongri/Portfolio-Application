@@ -162,5 +162,5 @@ jobs:
 
       - name: Deploy application
         run: |
-          kubectl set image deployment/flask-app flask=$IMAGE_NAME:$VERSION -n default
-          kubectl rollout status deployment/flask-app -n default
+          kubectl set image deployment/portfolio-flask-app flask=$IMAGE_NAME:$VERSION -n default
+          kubectl rollout status deployment/portfolio-flask-app -n default
