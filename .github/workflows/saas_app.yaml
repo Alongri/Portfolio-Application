@@ -160,6 +160,7 @@ jobs:
       - name: Set VERSION environment variable
         run: echo "VERSION=${{ needs.build-and-e2e.outputs.version }}" >> $GITHUB_ENV
 
+        
       - name: Deploy application
         run: |
           kubectl set image deployment/portfolio-flask-app flask=$IMAGE_NAME:$VERSION -n default
