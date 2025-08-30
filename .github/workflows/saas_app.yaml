@@ -155,13 +155,14 @@ jobs:
 
       - name: Update kubeconfig for EKS
         run: |
-          aws eks update-kubeconfig --region $AWS_REGION --name alon-cluster
+          aws eks update-kubeconfig --region $AWS_REGION --name along-cluster
 
       - name: Set VERSION environment variable
         run: echo "VERSION=${{ needs.build-and-e2e.outputs.version }}" >> $GITHUB_ENV
 
-        
+
       - name: Deploy application
         run: |
-          kubectl set image deployment/portfolio-flask-app flask=$IMAGE_NAME:$VERSION -n default
-          kubectl rollout status deployment/portfolio-flask-app -n default
+          kubectl set image deployment/portfolio-umbrella-flask-app flask=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:$VERSION -n default
+          kubectl rollout status deployment/portfolio-umbrella-flask-app -n default
+
