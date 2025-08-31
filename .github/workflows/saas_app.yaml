@@ -142,6 +142,9 @@ jobs:
     needs: push-to-ecr
     runs-on: ubuntu-latest
 
+    env:
+      VERSION: ${{ needs.build-and-e2e.outputs.version }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -156,9 +159,6 @@ jobs:
       - name: Update kubeconfig for EKS
         run: |
           aws eks update-kubeconfig --region $AWS_REGION --name along-cluster
-
-      - name: Set VERSION environment variable
-        run: echo "VERSION=${{ needs.build-and-e2e.outputs.version }}" >> $GITHUB_ENV
 
 
       - name: Deploy application
