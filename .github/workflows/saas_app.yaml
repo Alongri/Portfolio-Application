@@ -143,6 +143,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      ECR_REPO: development/excel_uploader
       VERSION: ${{ needs.build-and-e2e.outputs.version }}
 
     steps:
@@ -164,6 +165,6 @@ jobs:
       - name: Deploy application
         run: |
           echo "Deploying version: $VERSION"
-          kubectl set image deployment/portfolio-umbrella-flask-app flask=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/excel_uploader:$VERSION -n default
+          kubectl set image deployment/portfolio-umbrella-flask-app flask=884394270539.dkr.ecr.$AWS_REGION.amazonaws.com/excel_uploader:$VERSION -n default
           kubectl rollout status deployment/portfolio-umbrella-flask-app -n default
 
