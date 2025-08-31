@@ -139,7 +139,7 @@ jobs:
 
   deploy-to-eks:
     name: 🚀 Deploy to EKS
-    needs: push-to-ecr
+    needs: [push-to-ecr, build-and-e2e]
     runs-on: ubuntu-latest
 
     env:
@@ -163,6 +163,7 @@ jobs:
 
       - name: Deploy application
         run: |
+          echo "Deploying version: $VERSION"
           kubectl set image deployment/portfolio-umbrella-flask-app flask=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/excel_uploader:$VERSION -n default
           kubectl rollout status deployment/portfolio-umbrella-flask-app -n default
 
