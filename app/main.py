@@ -24,14 +24,14 @@ def get_db():
             # Authenticated connection
             uri = (
                 f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}"
-                f"@{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB}?authSource=admin"
+                f"@{MONGO_HOST}:27017/{MONGO_DB}?authSource=admin"
             )
             client = MongoClient(uri)
             db_name = MONGO_DB
 
         elif MONGO_HOST and MONGO_DB:
             # No authentication, but DB and host provided
-            uri = f"mongodb://{MONGO_HOST}:{MONGO_PORT}"
+            uri = f"mongodb://{MONGO_HOST}:27017"
             client = MongoClient(uri)
             db_name = MONGO_DB
 
