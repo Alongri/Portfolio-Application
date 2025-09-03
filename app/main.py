@@ -23,7 +23,7 @@ def get_db():
         if not all([MONGO_USER, MONGO_PASSWORD, MONGO_DB]):
             # Use a test DB in case env vars are missing
             print("Environment variables missing, using test_db")
-            client = MongoClient("mongodb://localhost:27017")
+            client = MongoClient(f"mongodb://{MONGO_HOST}:27017")
             db_name = "test_db"
         else:
             client = MongoClient(f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:27017")
