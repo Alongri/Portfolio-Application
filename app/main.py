@@ -13,7 +13,8 @@ app.config['UPLOAD_FOLDER'] = "uploads"
 MONGO_USER = os.getenv("ROOT_USERNAME")
 MONGO_PASSWORD = os.getenv("ROOT_PASSWORD")
 MONGO_DB = os.getenv("MONGO_DB")
-MONGO_HOST = os.getenv("MONGO_HOST", "mongo")
+MONGO_HOST = os.getenv("MONGO_HOST")
+MONGO_PORT = int(os.getenv("MONGO_PORT", 27017))
 
 # Lazy DB initialization
 db = None
