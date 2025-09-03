@@ -20,16 +20,27 @@ db = None
 def get_db():
     global db
     if db is None:
-        if all([MONGO_USER, MONGO_PASSWORD, MONGO_DB]):
-            client = MongoClient(f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:27017")
+        if MONGO_USER and MONGO_PASSWORD and MONGO_DB and MONGO_HOST:
+            # Authenticated connection
+            uri = (
+                f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}"
+                f"@{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB}?authSource=admin"
+            )
+            client = MongoClient(uri)
             db_name = MONGO_DB
-        elif all([MONGO_HOST, MONGO_DB]):
-            client = MongoClient(f"mongodb://{MONGO_HOST}:27017")
+
+        elif MONGO_HOST and MONGO_DB:
+            # No authentication, but DB and host provided
+            uri = f"mongodb://{MONGO_HOST}:{MONGO_PORT}"
+            client = MongoClient(uri)
             db_name = MONGO_DB
+
         else:
-            print("Environment variables missing, using test_db")
+            # Fallback to local test DB
+            print("⚠️ Environment variables missing, using test_db on localhost")
             client = MongoClient("mongodb://localhost:27017")
             db_name = "test_db"
+
         db = client[db_name]
     return db
 
