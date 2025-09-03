@@ -10,8 +10,8 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = "uploads"
 
 # MongoDB client
-MONGO_USER = os.getenv("MONGO_INITDB_ROOT_USERNAME")
-MONGO_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
+MONGO_USER = os.getenv("ROOT_USERNAME")
+MONGO_PASSWORD = os.getenv("ROOT_PASSWORD")
 MONGO_DB = os.getenv("MONGO_DB")
 MONGO_HOST = os.getenv("MONGO_HOST", "mongo")
 
