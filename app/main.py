@@ -20,16 +20,19 @@ db = None
 def get_db():
     global db
     if db is None:
-        if not all([MONGO_USER, MONGO_PASSWORD, MONGO_DB]):
-            # Use a test DB in case env vars are missing
-            print("Environment variables missing, using test_db")
-            client = MongoClient(f"mongodb://{MONGO_HOST}:27017")
-            db_name = "test_db"
-        else:
+        if all([MONGO_USER, MONGO_PASSWORD, MONGO_DB]):
             client = MongoClient(f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:27017")
             db_name = MONGO_DB
+        elif all([MONGO_HOST, MONGO_DB]):
+            client = MongoClient(f"mongodb://{MONGO_HOST}:27017")
+            db_name = MONGO_DB
+        else:
+            print("Environment variables missing, using test_db")
+            client = MongoClient("mongodb://localhost:27017")
+            db_name = "test_db"
         db = client[db_name]
     return db
+
 
 # Home page with upload form
 @app.route("/", methods=["GET"])
