@@ -16,31 +16,24 @@ MONGO_DB = os.getenv("MONGO_DB")
 MONGO_HOST = os.getenv("MONGO_HOST")
 MONGO_PORT = int(os.getenv("MONGO_PORT", 27017))
 
-# Lazy DB initialization
 db = None
 def get_db():
     global db
     if db is None:
-        if MONGO_USER and MONGO_PASSWORD and MONGO_DB and MONGO_HOST:
-            # Authenticated connection
-            uri = ("mongodb://root:MyRootPassword123@portfolio-umbrella-mongodb-headless:27017/excel_db?authSource=admin")
+        # Use production Mongo if MONGO_HOST is set
+        if MONGO_HOST:
+            uri = f"mongodb://root:MyRootPassword123@portfolio-umbrella-mongodb-headless:27017/excel_db?authSource=admin"
             client = MongoClient(uri)
             db_name = MONGO_DB
-
-        elif MONGO_HOST and MONGO_DB:
-            # No authentication, but DB and host provided
-            uri = f"mongodb://{MONGO_HOST}:27017"
-            client = MongoClient(uri)
-            db_name = MONGO_DB
-
         else:
-            # Fallback to local test DB
-            print("⚠️ Environment variables missing, using test_db on localhost")
-            client = MongoClient("mongodb://localhost:27017")
-            db_name = "test_db"
+            # Fallback to local Mongo for dev
+            print("Using local MongoDB for development")
+            client = MongoClient("mongodb://root:MyRootPassword123@mongo:27017")
+            db_name = "excel_db"
 
         db = client[db_name]
     return db
+
 
 
 # Home page with upload form
@@ -51,6 +44,13 @@ def index():
 # Upload Excel file
 @app.route("/upload/", methods=["POST"])
 def upload_excel():
+    # Ensure DB connection
+    try:
+        # The ping command returns {"ok": 1.0} if connected
+        get_db().command("ping")
+    except Exception as e:
+        return {"status": "Database connection failed", "error": str(e)}, 500
+
     if 'file' not in request.files:
         return "No file part", 400
 
@@ -60,9 +60,12 @@ def upload_excel():
 
     df = pd.read_excel(file)
     data = df.to_dict(orient="records")
-    get_db().excel_data.insert_many(data)
+    if not data:
+        return {"status": "No data to insert"}, 400
 
+    get_db().excel_data.insert_many(data)
     return {"filename": file.filename, "status": "uploaded successfully"}
+
 
 # Get all data
 @app.route("/data/", methods=["GET"])
