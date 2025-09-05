@@ -44,12 +44,6 @@ def index():
 # Upload Excel file
 @app.route("/upload/", methods=["POST"])
 def upload_excel():
-    # Ensure DB connection
-    try:
-        # The ping command returns {"ok": 1.0} if connected
-        get_db().command("ping")
-    except Exception as e:
-        return {"status": "Database connection failed", "error": str(e)}, 500
 
     if 'file' not in request.files:
         return "No file part", 400
