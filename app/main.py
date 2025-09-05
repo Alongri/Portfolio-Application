@@ -23,10 +23,7 @@ def get_db():
     if db is None:
         if MONGO_USER and MONGO_PASSWORD and MONGO_DB and MONGO_HOST:
             # Authenticated connection
-            uri = (
-                f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}"
-                f"@{MONGO_HOST}:27017/{MONGO_DB}?authSource=admin"
-            )
+            uri = ("mongodb://root:MyRootPassword123@localhost:27017?authSource=admin")
             client = MongoClient(uri)
             db_name = MONGO_DB
 
