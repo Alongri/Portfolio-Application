@@ -23,7 +23,7 @@ def get_db():
     if db is None:
         if MONGO_USER and MONGO_PASSWORD and MONGO_DB and MONGO_HOST:
             # Authenticated connection
-            uri = ("mongodb://root:MyRootPassword123@localhost:27017?authSource=admin")
+            uri = ("mongodb://root:MyRootPassword123@portfolio-umbrella-mongodb-headless:27017/excel_db?authSource=admin")
             client = MongoClient(uri)
             db_name = MONGO_DB
 
