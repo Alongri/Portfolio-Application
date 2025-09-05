@@ -21,12 +21,17 @@ def test_post_upload(client, monkeypatch):
 
     # Dummy DB
     class DummyCollection:
+        def __init__(self):
+            self.inserted = []
+
         def insert_many(self, data):
             self.inserted = data
             return True
 
     class DummyDB:
-        excel_data = DummyCollection()
+        def __init__(self):
+            self.excel_data = DummyCollection()
+
 
     # Patch get_db() on the module object
     monkeypatch.setattr(main, "get_db", lambda: DummyDB())
